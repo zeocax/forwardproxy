@@ -3,11 +3,17 @@ FROM golang:1.21-alpine AS builder
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates
 
+# Set Go environment variables
+ENV GO111MODULE=on
+ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOSUMDB=sum.golang.org
+
 # Install xcaddy
 RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
-# Build caddy with forwardproxy plugin
-RUN xcaddy build --with github.com/caddyserver/forwardproxy
+# Build caddy with forwardproxy plugin, specifying the correct caddy version
+RUN xcaddy build v2.8.4 \
+    --with github.com/caddyserver/forwardproxy@latest
 
 # Final stage
 FROM alpine:3.18.2
