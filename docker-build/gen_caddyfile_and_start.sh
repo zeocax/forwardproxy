@@ -6,13 +6,15 @@ SITE_ADDRESS="${SITE_ADDRESS:-localhost}"
 
 generate_caddyfile() {
     mkdir -p "$(dirname "${CADDYFILE}")"
+    mkdir -p "${ROOTDIR}"
 
     echo "${SITE_ADDRESS} {" > ${CADDYFILE}
-    echo "  root $ROOTDIR" >> ${CADDYFILE}
+    echo "  root * ${ROOTDIR}" >> ${CADDYFILE}
+    echo "  file_server" >> ${CADDYFILE}
 
-    echo "  forwardproxy {" >> ${CADDYFILE}
+    echo "  forward_proxy {" >> ${CADDYFILE}
     if [[ ! -z ${PROXY_USERNAME} ]]; then
-        echo "    basicauth ${PROXY_USERNAME} ${PROXY_PASSWORD}" >> ${CADDYFILE}
+        echo "    basic_auth ${PROXY_USERNAME} ${PROXY_PASSWORD}" >> ${CADDYFILE}
     fi
     if [[ "${PROBE_RESISTANT}" = true ]]; then
         echo "    probe_resistance ${SECRET_LINK}" >> ${CADDYFILE}
@@ -29,4 +31,8 @@ else
     generate_caddyfile
 fi
 
-caddy ${CADDY_OPTS} -conf ${CADDYFILE}
+echo "Generated Caddyfile content:"
+cat ${CADDYFILE}
+
+# Use Caddy v2 command format
+exec caddy run --config ${CADDYFILE} ${CADDY_OPTS}
