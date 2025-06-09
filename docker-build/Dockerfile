@@ -12,8 +12,9 @@ ENV GOSUMDB=sum.golang.org
 # Install xcaddy
 RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
-# Build caddy with forwardproxy and caddy-l4 plugins, specifying the correct caddy version
-RUN xcaddy build v2.10.0 \
+# Build caddy with forwardproxy plugin using stable versions
+# Use Caddy v2.8.4 which is known to work well with these plugins
+RUN xcaddy build v2.8.4 \
     --with github.com/caddyserver/forwardproxy@latest \
     --with github.com/mholt/caddy-l4@latest
 
