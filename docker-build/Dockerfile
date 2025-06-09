@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates
@@ -7,14 +7,20 @@ RUN apk add --no-cache git ca-certificates
 ENV GO111MODULE=on
 ENV GOPROXY=https://proxy.golang.org,direct
 ENV GOSUMDB=sum.golang.org
+ENV CGO_ENABLED=0
 
 # Install xcaddy
 RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
-# Build caddy with forwardproxy and caddy-l4 plugins, specifying the correct caddy version
+# Create working directory
+WORKDIR /build
+
+# Build caddy with forwardproxy and caddy-l4 plugins
+# First try building with verbose output to see any errors
 RUN xcaddy build v2.8.4 \
-    --with github.com/caddyserver/forwardproxy@latest \
-    --with github.com/mholt/caddy-l4@latest
+    --with github.com/caddyserver/forwardproxy \
+    --with github.com/mholt/caddy-l4 \
+    --output /build/caddy
 
 # Final stage
 FROM alpine:3.18.2
@@ -25,7 +31,7 @@ LABEL maintainer="SergeyFrolov@colorado.edu"
 RUN apk add --no-cache ca-certificates bash curl
 
 # Copy caddy binary from builder stage
-COPY --from=builder /go/caddy /usr/bin/caddy
+COPY --from=builder /build/caddy /usr/bin/caddy
 
 # Make caddy executable
 RUN chmod +x /usr/bin/caddy
