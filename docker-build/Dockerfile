@@ -11,14 +11,15 @@ ENV GOSUMDB=sum.golang.org
 # Install xcaddy
 RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
-# Build caddy with forwardproxy plugin, specifying the correct caddy version
+# Build caddy with forwardproxy and caddy-l4 plugins, specifying the correct caddy version
 RUN xcaddy build v2.8.4 \
-    --with github.com/caddyserver/forwardproxy@latest
+    --with github.com/caddyserver/forwardproxy@latest \
+    --with github.com/mholt/caddy-l4@latest
 
 # Final stage
 FROM alpine:3.18.2
 
-LABEL description="Docker image for caddy+forwardproxy plugin."
+LABEL description="Docker image for caddy+forwardproxy+layer4 plugin."
 LABEL maintainer="SergeyFrolov@colorado.edu"
 
 RUN apk add --no-cache ca-certificates bash curl
