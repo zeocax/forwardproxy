@@ -1,35 +1,27 @@
+# 步驟一：從官方的 Caddy builder 鏡像開始，它包含了完整的標準模組
+FROM caddy:2.8.4-builder-alpine AS builder
 
-FROM golang:1.23-alpine AS builder
-
-# Install build dependencies
-RUN apk add --no-cache git ca-certificates
-
-# Set Go environment variables
-ENV GO111MODULE=on
-ENV GOPROXY=https://proxy.golang.org,direct
-ENV GOSUMDB=sum.golang.org
-
-# Install xcaddy
-RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-
-# Build caddy with forwardproxy plugin using stable versions
-# Use Caddy v2.8.4 which is known to work well with these plugins
-RUN xcaddy build v2.8.4 \
+RUN xcaddy build \
     --with github.com/caddyserver/forwardproxy@latest \
     --with github.com/mholt/caddy-l4@latest
 
-# Final stage
-FROM alpine:3.20.0
+# 步驟二：最終鏡像也使用對應版本的官方鏡像
+FROM caddy:2.8.4-alpine
+
+# 將我們剛剛編譯好的、包含額外插件的 Caddy 執行檔複製進來，
+# 覆蓋掉原本的 Caddy 執行檔。
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+
+# -------------------------------------------------------------
+# 您 Dockerfile 中剩餘的部分可以保持不變
+# -------------------------------------------------------------
 
 LABEL description="Docker image for caddy+forwardproxy+layer4 plugin."
 LABEL maintainer="zeocax@zeocax.com"
 
-RUN apk add --no-cache ca-certificates bash curl
+RUN apk add --no-cache bash curl
 
-# Copy caddy binary from builder stage
-COPY --from=builder /go/caddy /usr/bin/caddy
-
-# Make caddy executable
+# Make caddy executable (通常不需要，但保留無妨)
 RUN chmod +x /usr/bin/caddy
 
 COPY gen_caddyfile_and_start.sh /bin/
